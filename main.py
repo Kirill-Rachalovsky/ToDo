@@ -1,15 +1,48 @@
 from datetime import datetime
 
-from fastapi import FastAPI, status, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends
+from fastapi_users import FastAPIUsers
+
 import models
+from auth.auth import auth_backend
+from auth.database import User
+from auth.manager import get_user_manager
 from database import engine, SessionLocal
 from typing import Annotated
 from sqlalchemy.orm import Session
 from schemas import TaskBase, BoardsBase
+from auth.schemas import UserCreate, UserRead
+
+
+api_users = FastAPIUsers[User, int](
+    get_user_manager,
+    [auth_backend],
+)
 
 
 app = FastAPI()
 models.Base.metadata.create_all(bind=engine)
+
+app.include_router(
+    api_users.get_auth_router(auth_backend),
+    prefix="/auth/jwt",
+    tags=["auth"],
+)
+
+
+app.include_router(
+    api_users.get_register_router(UserRead, UserCreate),
+    prefix="/auth",
+    tags=["auth"],
+)
+
+
+current_user = api_users.current_user()
+
+
+@app.get("/protected-route")
+def protected_route(user: User = Depends(current_user)):
+    return f"Hello, {user.email}"
 
 
 def get_db():

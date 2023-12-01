@@ -11,7 +11,8 @@ configuration = Configuration(
     config["DB_PASS"],
     config["DB_HOST"],
     config["DB_PORT"],
-    config["DB_NAME"]
+    config["DB_NAME"],
+    config["SECRET"]
 )
 
 DATABASE_URL = (f"postgresql://{configuration.db_user}:{configuration.db_pass}@{configuration.db_host}:"
