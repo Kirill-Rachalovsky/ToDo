@@ -2,15 +2,16 @@ from datetime import datetime
 
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi_users import FastAPIUsers
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 
 import models
 from auth.auth import auth_backend
 from auth.database import User
 from auth.manager import get_user_manager
-from database import engine, SessionLocal
+from database import engine, SessionLocal, Base
 from typing import Annotated
-from sqlalchemy.orm import Session
-from schemas import TaskBase, BoardsBase
+from schemas import TaskBase, BoardsBase, TaskUpdateBase
 from auth.schemas import UserCreate, UserRead
 
 
@@ -21,7 +22,6 @@ api_users = FastAPIUsers[User, int](
 
 
 app = FastAPI()
-models.Base.metadata.create_all(bind=engine)
 
 app.include_router(
     api_users.get_auth_router(auth_backend),
@@ -45,33 +45,39 @@ def protected_route(user: User = Depends(current_user)):
     return f"Hello, {user.email}"
 
 
-def get_db():
+async def get_db():
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
     db = SessionLocal()
     try:
         yield db
     finally:
-        db.close()
+        await db.close()
 
 
-db_dependency = Annotated[Session, Depends(get_db)]
+db_dependency = Annotated[AsyncSession, Depends(get_db)]
 
 
 @app.get("/boards")
-def get_all_boards(db: db_dependency):
-    result = db.query(models.Boards).all()
-    if not result:
+async def get_all_boards(db: db_dependency):
+    results = await db.execute(select(models.Boards))
+    boards = results.scalars().all()
+    if not boards:
         raise HTTPException(status_code=404, detail="Boards is not found")
-    return result
+    return boards
 
 
 @app.get("/boards/{board_id}")
-def get_board(board_id: int, db: db_dependency):
-    board = db.query(models.Boards).filter(models.Boards.id == board_id).first()
+async def get_board(board_id: int, db: db_dependency):
+    results = await db.execute(select(models.Boards).where(models.Boards.id == board_id))
+    board = results.scalar()
 
     if not board:
         raise HTTPException(status_code=404, detail="Board is not found")
 
-    boards_tasks = db.query(models.Tasks).filter(models.Tasks.board_id == board_id).all()
+    result_of_tasks = await db.execute(select(models.Tasks).where(models.Tasks.board_id == board_id))
+    boards_tasks = result_of_tasks.scalars().all()
+
     result = {
         "board_id": board.id,
         "board_title": board.title,
@@ -81,11 +87,11 @@ def get_board(board_id: int, db: db_dependency):
 
 
 @app.post("/boards")
-def create_board(board: BoardsBase, db: db_dependency):
+async def create_board(board: BoardsBase, db: db_dependency):
     db_board = models.Boards(title=board.title)
     db.add(db_board)
-    db.commit()
-    db.refresh(db_board)
+    await db.commit()
+    await db.refresh(db_board)
     for task in board.tasks:
         db_task = models.Tasks(
             is_done=task.is_done,
@@ -95,12 +101,12 @@ def create_board(board: BoardsBase, db: db_dependency):
             board_id=db_board.id
         )
         db.add(db_task)
-    db.commit()
+    await db.commit()
     return db_board
 
 
 @app.post("/boards/{board_id}")
-def create_task(board_id: int, task: TaskBase, db: db_dependency):
+async def create_task(board_id: int, task: TaskBase, db: db_dependency):
     db_task = models.Tasks(
         is_done=task.is_done,
         task_text=task.task_text,
@@ -109,72 +115,76 @@ def create_task(board_id: int, task: TaskBase, db: db_dependency):
         board_id=board_id
     )
     db.add(db_task)
-    db.commit()
-    db.refresh(db_task)
+    await db.commit()
+    await db.refresh(db_task)
     return db_task
 
 
 @app.delete("/boards/{board_id}")
-def delete_board(board_id: int, db: db_dependency):
-    db_board = db.query(models.Boards).filter(models.Boards.id == board_id).first()
+async def delete_board(board_id: int, db: db_dependency):
+    results = await db.execute(select(models.Boards).where(models.Boards.id == board_id))
+    db_board = results.scalar()
     if not db_board:
         raise HTTPException(status_code=404, detail="Boards is not found")
 
-    boards_tasks = db.query(models.Tasks).filter(models.Tasks.board_id == board_id).all()
+    result_of_tasks = await db.execute(select(models.Tasks).where(models.Tasks.board_id == board_id))
+    boards_tasks = result_of_tasks.scalars().all()
     if len(boards_tasks) != 0:
         for task in boards_tasks:
-            db_task = db.query(models.Tasks).filter(models.Tasks.id == task.id).first()
-            db.delete(db_task)
-        db.commit()
-    db.refresh(db_board)
-    db.delete(db_board)
-    db.commit()
+            result = await db.execute(select(models.Tasks).where(models.Tasks.id == task.id))
+            db_task = result.scalar()
+            await db.delete(db_task)
+        await db.commit()
+    await db.refresh(db_board)
+    await db.delete(db_board)
+    await db.commit()
 
 
 @app.put("/boards/{board_id}")
-def update_board(board_id: int, new_title:str, db: db_dependency):
-    db_board = db.query(models.Boards).filter(models.Boards.id == board_id).first()
+async def update_board(board_id: int, new_title:str, db: db_dependency):
+    results = await db.execute(select(models.Boards).where(models.Boards.id == board_id))
+    db_board = results.scalar()
 
     if not db_board:
         raise HTTPException(status_code=404, detail="Boards is not found")
 
     db_board.title = new_title
-    db.commit()
-    db.refresh(db_board)
+    await db.commit()
+    await db.refresh(db_board)
     return db_board
 
 
 @app.delete("/boards/{board_id}/{task_id}")
-def delete_task(board_id: int, task_id: int, db: db_dependency):
-    db_task = db.query(models.Tasks).filter(models.Tasks.id == task_id).first()
-    db_board = db.query(models.Boards).filter(models.Boards.id == board_id).first()
+async def delete_task(board_id: int, task_id: int, db: db_dependency):
+
+    result = await db.execute(select(models.Tasks).where(models.Tasks.id == task_id))
+    db_task = result.scalar()
+
+    result = await db.execute(select(models.Boards).where(models.Boards.id == db_task.board_id))
+    db_board = result.scalar()
     if not db_task:
         raise HTTPException(status_code=404, detail="Task is not found")
     elif db_task.board_id != board_id:
         raise HTTPException(status_code=404, detail="This board does not contain such a task")
 
-    db.delete(db_task)
-    db.commit()
-    db.refresh(db_board)
-    return {
-        "board_id": db_board.id,
-        "board_title": db_board.title,
-        "tasks": db.query(models.Tasks).filter(models.Tasks.board_id == board_id).all()
-    }
+    await db.delete(db_task)
+    await db.commit()
+    await db.refresh(db_board)
 
 
 @app.put("/boards/{board_id}/{task_id}")
-def update_task(board_id: int, task_id: int, new_task_text: str, done_status: bool, db: db_dependency):
-    db_task = db.query(models.Tasks).filter(models.Tasks.id == task_id).first()
+async def update_task(board_id: int, task_id: int, task: TaskUpdateBase, db: db_dependency):
+    query = await db.execute(select(models.Tasks).where(models.Tasks.id == task_id))
+    db_task = query.scalar()
 
     if not db_task:
         raise HTTPException(status_code=404, detail="Task is not found")
     elif db_task.board_id != board_id:
         raise HTTPException(status_code=404, detail="This board does not contain such a task")
 
-    db_task.is_done = done_status
-    db_task.task_text = new_task_text
-    db_task.date_update = datetime.today().strftime("%Y-%m-%d")
-    db.commit()
-    return db_task
+    db_task.is_done = task.is_done
+    db_task.task_text = task.task_text
+    db_task.date_update = datetime.today()
+    await db.commit()
+    await db.refresh(db_task)
 
