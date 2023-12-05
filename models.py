@@ -3,12 +3,16 @@ from sqlalchemy import Integer, String, Column, ForeignKey, Boolean, DATE
 from datetime import datetime
 
 
-# class User(Base):
-#     __tablename__ = 'users'
-#
-#     id = Column(Integer, primary_key=True, index=True)
-#     username = Column(String, unique=True)
-#     hashed_password = Column(String)
+class User(Base):
+    __tablename__ = 'user'
+
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, unique=True, nullable=False)
+    username = Column(String, unique=True, nullable=False)
+    hashed_password = Column(String, nullable=False)
+    is_active = Column(Boolean, default=True, nullable=False)
+    is_superuser = Column(Boolean, default=False, nullable=False)
+    is_verified = Column(Boolean, default=False, nullable=False)
 
 
 class Boards(Base):
@@ -16,6 +20,7 @@ class Boards(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, nullable=False)
+    user_id = Column(Integer, ForeignKey("user.id"))
 
 
 class Tasks(Base):
