@@ -18,7 +18,6 @@ configuration = Configuration(
 DATABASE_URL = (f"postgresql+asyncpg://{configuration.db_user}:{configuration.db_pass}@{configuration.db_host}:"
                 f"{configuration.db_port}/{configuration.db_name}")
 
-
 engine = create_async_engine(DATABASE_URL)
 SessionLocal = async_sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
