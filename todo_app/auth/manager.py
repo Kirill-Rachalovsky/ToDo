@@ -6,7 +6,7 @@ from fastapi import Depends, Request
 from fastapi_users import BaseUserManager, IntegerIDMixin
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from database import engine, SessionLocal, configuration, Base
+from database import SessionLocal, configuration
 
 from auth.user_model import User
 
