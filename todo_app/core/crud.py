@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from database import engine, SessionLocal, Base
 from core.schemas import BoardsBase, TaskBase
 from core import models
-from core.models import StatusEnum, get_allowed_statuses
+from core.models import StatusEnum
 
 
 async def get_db():
@@ -40,7 +40,7 @@ async def create_board(board: BoardsBase, db: db_dependency):
         if task.status not in StatusEnum:
             raise HTTPException(
                 status_code=500,
-                detail=f'You should choice task status from {get_allowed_statuses()}'
+                detail=f'You should choice task status from {StatusEnum.get_allowed_statuses()}'
             )
 
         db_task = models.Tasks(
@@ -120,7 +120,7 @@ async def create_task(board_id: int, task: TaskBase, db: db_dependency):
     if task.status not in StatusEnum:
         raise HTTPException(
             status_code=500,
-            detail=f'You should choice task status from {get_allowed_statuses()}'
+            detail=f'You should choice task status from {StatusEnum.get_allowed_statuses()}'
         )
     db_task = models.Tasks(
         status=task.status,
@@ -148,7 +148,7 @@ async def update_task(board_id: int, task_id: int, task: TaskBase, db: db_depend
     elif task.status not in StatusEnum:
         raise HTTPException(
             status_code=500,
-            detail=f'You should choice task status from {get_allowed_statuses()}'
+            detail=f'You should choice task status from {StatusEnum.get_allowed_statuses()}'
         )
 
     db_task.status = task.status

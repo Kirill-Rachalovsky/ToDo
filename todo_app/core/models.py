@@ -1,5 +1,5 @@
 from database import Base
-from sqlalchemy import Integer, String, Column, ForeignKey, Boolean, DATE
+from sqlalchemy import Integer, String, Column, ForeignKey, DATE
 from sqlalchemy.dialects.postgresql import ENUM
 from datetime import datetime
 from enum import Enum
@@ -10,12 +10,12 @@ class StatusEnum(Enum):
     IN_PROGRESS = "IN_PROGRESS"
     DONE = "DONE"
 
-
-def get_allowed_statuses():
-    status_list = []
-    for i in StatusEnum:
-        status_list.append(i.value)
-    return status_list
+    @staticmethod
+    def get_allowed_statuses():
+        status_list = []
+        for i in StatusEnum:
+            status_list.append(i.value)
+        return status_list
 
 
 class Boards(Base):
