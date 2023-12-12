@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from database import engine, SessionLocal, Base
 from core.schemas import BoardsBase, TaskBase
 from core import models
+from core.models import StatusEnum, get_allowed_statuses
 
 
 async def get_db():
@@ -31,9 +32,17 @@ todo_router = APIRouter()
 async def create_board(board: BoardsBase, db: db_dependency):
     db_board = models.Boards(title=board.title)
     db.add(db_board)
+    # TODO Удалить комиты в середине транзакции, чтобы сделать её атомарной
     await db.commit()
     await db.refresh(db_board)
     for task in board.tasks:
+
+        if task.status not in StatusEnum:
+            raise HTTPException(
+                status_code=500,
+                detail=f'You should choice task status from {get_allowed_statuses()}'
+            )
+
         db_task = models.Tasks(
             status=task.status,
             task_text=task.task_text,
@@ -108,6 +117,11 @@ async def delete_board(board_id: int, db: db_dependency):
 # CREATE TASK
 @todo_router.post("/boards/{board_id}")
 async def create_task(board_id: int, task: TaskBase, db: db_dependency):
+    if task.status not in StatusEnum:
+        raise HTTPException(
+            status_code=500,
+            detail=f'You should choice task status from {get_allowed_statuses()}'
+        )
     db_task = models.Tasks(
         status=task.status,
         task_text=task.task_text,
@@ -131,6 +145,11 @@ async def update_task(board_id: int, task_id: int, task: TaskBase, db: db_depend
         raise HTTPException(status_code=404, detail="Task is not found")
     elif db_task.board_id != board_id:
         raise HTTPException(status_code=404, detail="This board does not contain such a task")
+    elif task.status not in StatusEnum:
+        raise HTTPException(
+            status_code=500,
+            detail=f'You should choice task status from {get_allowed_statuses()}'
+        )
 
     db_task.status = task.status
     db_task.task_text = task.task_text
