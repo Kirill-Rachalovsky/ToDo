@@ -1,14 +1,11 @@
-from typing import List, Optional, Generic, TypeVar
+from typing import List
 
-from pydantic import BaseModel, Field
-from pydantic.v1.generics import GenericModel
-
-
-T = TypeVar('T')
+from pydantic import BaseModel
+from core.models import StatusEnum
 
 
 class TaskBase(BaseModel):
-    status: bool=False
+    status: str = StatusEnum.NOT_STARTED
     task_text: str = 'Task text'
 
 
@@ -16,13 +13,3 @@ class BoardsBase(BaseModel):
     title: str = 'Enter a board title'
     tasks: List[TaskBase]
 
-
-class RequestBoard(BaseModel):
-    parameter: BoardsBase = Field(...)
-
-
-class Response(GenericModel, Generic[T]):
-    code: str
-    status: str
-    message: str
-    result: Optional[T]
