@@ -32,7 +32,6 @@ todo_router = APIRouter()
 async def create_board(board: BoardsBase, db: db_dependency):
     db_board = models.Boards(title=board.title)
     db.add(db_board)
-    # TODO Удалить комиты в середине транзакции, чтобы сделать её атомарной
     await db.commit()
     await db.refresh(db_board)
     for task in board.tasks:
@@ -51,7 +50,9 @@ async def create_board(board: BoardsBase, db: db_dependency):
             board_id=db_board.id
         )
         db.add(db_task)
+
     await db.commit()
+    await db.refresh(db_board)
     return db_board
 
 
@@ -60,8 +61,10 @@ async def create_board(board: BoardsBase, db: db_dependency):
 async def get_all_boards(db: db_dependency):
     query = await db.execute(select(models.Boards))
     boards = query.scalars().all()
+
     if not boards:
         raise HTTPException(status_code=404, detail="Boards is not found")
+
     return boards
 
 
@@ -70,8 +73,10 @@ async def get_all_boards(db: db_dependency):
 async def get_board(board_id: int, db: db_dependency):
     board_query = await db.execute(select(models.Boards).where(models.Boards.id == board_id))
     board = board_query.scalar()
+
     if not board:
         raise HTTPException(status_code=404, detail="Board is not found")
+
     task_query = await db.execute(select(models.Tasks).where(models.Tasks.board_id == board_id))
     boards_tasks = task_query.scalars().all()
     result = {
@@ -87,6 +92,10 @@ async def get_board(board_id: int, db: db_dependency):
 async def update_board(board_id: int, new_title:str, db: db_dependency):
     query = await db.execute(select(models.Boards).where(models.Boards.id == board_id))
     db_board = query.scalar()
+
+    if not db_board:
+        raise HTTPException(status_code=404, detail="Board is not found")
+
     db_board.title = new_title
     await db.commit()
     await db.refresh(db_board)
@@ -98,6 +107,7 @@ async def update_board(board_id: int, new_title:str, db: db_dependency):
 async def delete_board(board_id: int, db: db_dependency):
     board_query = await db.execute(select(models.Boards).where(models.Boards.id == board_id))
     db_board = board_query.scalar()
+
     if not db_board:
         raise HTTPException(status_code=404, detail="Boards is not found")
 
