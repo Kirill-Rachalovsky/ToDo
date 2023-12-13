@@ -57,12 +57,8 @@ app.include_router(
 )
 
 
-app.include_router(todo_router, tags=["boards"])
+app.include_router(
+    todo_router,
+    tags=["boards"]
+)
 
-
-current_user = api_users.current_user()
-
-
-@app.get("/protected-route")
-def protected_route(user: User = Depends(current_user)):
-    return f"Hello, {user.email}"
