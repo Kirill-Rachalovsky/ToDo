@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import Annotated
 
 from fastapi import HTTPException, APIRouter, Depends
 from fastapi_users import FastAPIUsers
@@ -9,24 +8,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from auth.auth import auth_backend
 from auth.manager import get_user_manager
 from auth.user_model import User
-from database import engine, SessionLocal, Base
 from core.schemas import BoardsBase, TaskBase
 from core import models
 from core.models import StatusEnum
-
-
-async def get_db():
-    async with engine.begin() as conn:
-        conn.run_sync(Base.metadata.create_all)
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        await db.close()
-
-
-db_dependency = Annotated[AsyncSession, Depends(get_db)]
-
+from database import get_db
 
 api_users = FastAPIUsers[User, int](
     get_user_manager,
@@ -39,8 +24,8 @@ todo_router = APIRouter()
 
 
 # CREATE BOARD
-@todo_router.post("/boards")
-async def create_board(board: BoardsBase, db: db_dependency, user: User = Depends(current_user)):
+@todo_router.post("/boards", status_code=201)
+async def create_board(board: BoardsBase, db: AsyncSession = Depends(get_db), user: User = Depends(current_user)):
     db_board = models.Boards(
         title=board.title,
         user_id=user.id
@@ -72,8 +57,7 @@ async def create_board(board: BoardsBase, db: db_dependency, user: User = Depend
 
 # GET ALL BOARDS
 @todo_router.get("/boards")
-async def get_all_boards(db: db_dependency, user: User = Depends(current_user)):
-
+async def get_all_boards(db: AsyncSession = Depends(get_db), user: User = Depends(current_user)):
     query = await db.execute(select(models.Boards).where(models.Boards.user_id == user.id))
     boards = query.scalars().all()
 
@@ -85,7 +69,7 @@ async def get_all_boards(db: db_dependency, user: User = Depends(current_user)):
 
 # GET BOARD WITH TASKS
 @todo_router.get("/boards/{board_id}")
-async def get_board(board_id: int, db: db_dependency, user: User = Depends(current_user)):
+async def get_board(board_id: int, db: AsyncSession = Depends(get_db), user: User = Depends(current_user)):
     board_query = await db.execute(select(models.Boards).where(models.Boards.id == board_id))
     board = board_query.scalar()
 
@@ -103,9 +87,9 @@ async def get_board(board_id: int, db: db_dependency, user: User = Depends(curre
 
 
 # UPDATE BOARD
-@todo_router.put("/boards/{board_id}")
-async def update_board(board_id: int, new_title: str, db: db_dependency, user: User = Depends(current_user)):
-
+@todo_router.put("/boards/{board_id}", status_code=201)
+async def update_board(board_id: int, new_title: str, db: AsyncSession = Depends(get_db),
+                       user: User = Depends(current_user)):
     query = await db.execute(select(models.Boards).where(models.Boards.id == board_id))
     db_board = query.scalar()
 
@@ -120,7 +104,7 @@ async def update_board(board_id: int, new_title: str, db: db_dependency, user: U
 
 # DELETE BOARD
 @todo_router.delete("/boards/{board_id}")
-async def delete_board(board_id: int, db: db_dependency, user: User = Depends(current_user)):
+async def delete_board(board_id: int, db: AsyncSession = Depends(get_db), user: User = Depends(current_user)):
     board_query = await db.execute(select(models.Boards).where(models.Boards.id == board_id))
     db_board = board_query.scalar()
 
@@ -141,8 +125,9 @@ async def delete_board(board_id: int, db: db_dependency, user: User = Depends(cu
 
 
 # CREATE TASK
-@todo_router.post("/boards/{board_id}")
-async def create_task(board_id: int, task: TaskBase, db: db_dependency, user: User = Depends(current_user)):
+@todo_router.post("/boards/{board_id}", status_code=201)
+async def create_task(board_id: int, task: TaskBase, db: AsyncSession = Depends(get_db),
+                      user: User = Depends(current_user)):
     # current_user не используется, но он не допускает к Эндпоинту неавторизированных пользователей
     if task.status not in StatusEnum:
         raise HTTPException(
@@ -163,8 +148,8 @@ async def create_task(board_id: int, task: TaskBase, db: db_dependency, user: Us
 
 
 # UPDATE TASK
-@todo_router.put("/boards/{board_id}/{task_id}")
-async def update_task(board_id: int, task_id: int, task: TaskBase, db: db_dependency,
+@todo_router.put("/boards/{board_id}/{task_id}", status_code=201)
+async def update_task(board_id: int, task_id: int, task: TaskBase, db: AsyncSession = Depends(get_db),
                       user: User = Depends(current_user)):
     task_query = await db.execute(select(models.Tasks).where(models.Tasks.id == task_id))
     db_task = task_query.scalar()
@@ -186,11 +171,13 @@ async def update_task(board_id: int, task_id: int, task: TaskBase, db: db_depend
     db_task.date_update = datetime.today()
     await db.commit()
     await db.refresh(db_task)
+    return db_task
 
 
 # DELETE TASK
 @todo_router.delete("/boards/{board_id}/{task_id}")
-async def delete_task(board_id: int, task_id: int, db: db_dependency, user: User = Depends(current_user)):
+async def delete_task(board_id: int, task_id: int, db: AsyncSession = Depends(get_db),
+                      user: User = Depends(current_user)):
     task_query = await db.execute(select(models.Tasks).where(models.Tasks.id == task_id))
     db_task = task_query.scalar()
     board_query = await db.execute(select(models.Boards).where(models.Boards.id == db_task.board_id))
@@ -204,5 +191,3 @@ async def delete_task(board_id: int, task_id: int, db: db_dependency, user: User
     await db.delete(db_task)
     await db.commit()
     await db.refresh(db_board)
-
-
