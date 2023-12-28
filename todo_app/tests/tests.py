@@ -1,6 +1,8 @@
 import pytest
 from httpx import AsyncClient
 
+from core.models import StatusEnum
+
 
 @pytest.fixture()
 async def user_data():
@@ -20,15 +22,15 @@ async def board_data():
         "title": "My board",
         "tasks": [
             {
-                "status": "NOT_STARTED",
+                "status": StatusEnum.NOT_STARTED.value,
                 "task_text": "Do homework"
             },
             {
-                "status": "NOT_STARTED",
+                "status": StatusEnum.NOT_STARTED.value,
                 "task_text": "Make dinner"
             },
             {
-                "status": "NOT_STARTED",
+                "status": StatusEnum.NOT_STARTED.value,
                 "task_text": "Clean the room"
             }
         ]
@@ -45,7 +47,7 @@ async def board_update_data():
 @pytest.fixture()
 async def task_data():
     return {
-        "status": "NOT_STARTED",
+        "status": StatusEnum.NOT_STARTED.value,
         "task_text": "Task text"
     }
 
@@ -53,7 +55,7 @@ async def task_data():
 @pytest.fixture()
 async def task_update_data():
     return {
-        "status": "DONE",
+        "status": StatusEnum.DONE.value,
         "task_text": "New task text"
     }
 

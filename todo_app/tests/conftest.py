@@ -38,6 +38,5 @@ async def async_client() -> AsyncGenerator[AsyncClient, None]:
 
 @pytest.fixture()
 async def get_token(async_client) -> dict:
-    a = async_client
     client_token = dict(fastapiusersauth=str(async_client.cookies.jar)[36:193])
     return client_token
