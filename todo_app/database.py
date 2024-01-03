@@ -6,7 +6,16 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 
 config = dotenv_values(".env")
 
-if bool(config["TESTING_MODE"]):
+
+if config["TESTING_MODE"].lower() == "true":
+    TESTING_MODE = True
+elif config["TESTING_MODE"].lower() == "false":
+    TESTING_MODE = False
+else:
+    raise TypeError("TESTING_MODE must be 'True' or 'False'")
+
+
+if TESTING_MODE == True:
     configuration = Configuration(
         config["DB_TEST_USER"],
         config["DB_TEST_PASS"],
