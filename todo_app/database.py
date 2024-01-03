@@ -14,8 +14,7 @@ elif config["TESTING_MODE"].lower() == "false":
 else:
     raise TypeError("TESTING_MODE must be 'True' or 'False'")
 
-
-if TESTING_MODE == True:
+if TESTING_MODE:
     configuration = Configuration(
         config["DB_TEST_USER"],
         config["DB_TEST_PASS"],
