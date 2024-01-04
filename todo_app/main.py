@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi_users import FastAPIUsers
 
 from auth.auth import auth_backend
@@ -21,6 +21,15 @@ async def create_db_and_tables():
 async def on_startup():
     # Not needed if you setup a migration system like Alembic
     await create_db_and_tables()
+
+
+@app.middleware("http")
+async def error_log_middleware(request: Request, call_next):
+    response = await call_next(request)
+    if response.status_code // 100 == 4:
+        with open('error_log.txt', 'a') as file:
+            file.write(f'{request.method} {request.url} {response.status_code}\n')
+    return response
 
 
 api_users = FastAPIUsers[User, int](
