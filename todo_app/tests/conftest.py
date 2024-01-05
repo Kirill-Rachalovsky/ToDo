@@ -5,7 +5,7 @@ import pytest
 from httpx import AsyncClient
 
 from database import engine, Base
-from main import app
+from todo_app.main import app
 
 
 @pytest.fixture(autouse=True, scope="session")

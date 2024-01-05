@@ -1,15 +1,13 @@
-from typing import Optional
 from typing import AsyncGenerator
+from typing import Optional
 
-from fastapi_users.db import SQLAlchemyUserDatabase
 from fastapi import Depends, Request
 from fastapi_users import BaseUserManager, IntegerIDMixin
+from fastapi_users.db import SQLAlchemyUserDatabase
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from database import SessionLocal, configuration
-
-from auth.user_model import User
-
+from todo_app.auth.user_model import User
+from todo_app.database import SessionLocal, configuration
 
 SECRET = configuration.secret
 

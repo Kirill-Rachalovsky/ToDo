@@ -5,13 +5,13 @@ from fastapi_users import FastAPIUsers
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from auth.auth import auth_backend
-from auth.manager import get_user_manager
-from auth.user_model import User
-from core.schemas import BoardsBase, TaskBase
-from core import models
-from core.models import StatusEnum
-from database import get_db
+from todo_app.auth.auth import auth_backend
+from todo_app.auth.manager import get_user_manager
+from todo_app.auth.user_model import User
+from todo_app.core import models
+from todo_app.core.models import StatusEnum
+from todo_app.core.schemas import BoardsBase, TaskBase
+from todo_app.database import get_db
 
 api_users = FastAPIUsers[User, int](
     get_user_manager,

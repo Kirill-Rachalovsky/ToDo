@@ -1,13 +1,12 @@
 from fastapi import FastAPI, Request
 from fastapi_users import FastAPIUsers
 
-from auth.auth import auth_backend
-from auth.user_model import User
-from auth.manager import get_user_manager
-from database import engine, Base
-from auth.schemas import UserCreate, UserRead
-from core.crud import todo_router
-
+from todo_app.auth.auth import auth_backend
+from todo_app.auth.manager import get_user_manager
+from todo_app.auth.schemas import UserCreate, UserRead
+from todo_app.auth.user_model import User
+from todo_app.core.crud import todo_router
+from todo_app.database import engine, Base
 
 app = FastAPI()
 
@@ -53,4 +52,3 @@ app.include_router(
     todo_router,
     tags=["boards"]
 )
-

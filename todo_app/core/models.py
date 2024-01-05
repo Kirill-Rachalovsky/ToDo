@@ -1,8 +1,10 @@
-from database import Base
-from sqlalchemy import Integer, String, Column, ForeignKey, DATE
-from sqlalchemy.dialects.postgresql import ENUM
 from datetime import datetime
 from enum import Enum
+
+from sqlalchemy import Integer, String, Column, ForeignKey, DATE
+from sqlalchemy.dialects.postgresql import ENUM
+
+from todo_app.database import Base
 
 
 class StatusEnum(Enum):
@@ -43,5 +45,3 @@ class Tasks(Base):
     date_created = Column(DATE, default=datetime.today().strftime("%Y-%m-%d"))
     date_update = Column(DATE, default=datetime.today().strftime("%Y-%m-%d"))
     board_id = Column(Integer, ForeignKey("boards.id"))
-
-

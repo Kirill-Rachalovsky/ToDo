@@ -1,11 +1,10 @@
-from sqlalchemy.orm import DeclarativeBase
-from config import Configuration
 from dotenv import dotenv_values
-
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
+from sqlalchemy.orm import DeclarativeBase
+
+from todo_app.config import Configuration
 
 config = dotenv_values(".env")
-
 
 if config["TESTING_MODE"].lower() == "true":
     TESTING_MODE = True
@@ -32,7 +31,6 @@ else:
         config["DB_NAME"],
         config["SECRET"]
     )
-
 
 DATABASE_URL = (f"postgresql+asyncpg://{configuration.db_user}:{configuration.db_pass}@{configuration.db_host}:"
                 f"{configuration.db_port}/{configuration.db_name}")

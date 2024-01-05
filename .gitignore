@@ -1,6 +1,6 @@
 .idea
 venv
 .venv
-todo_app/.env
+.env
 todo_app/error_log.txt
 
