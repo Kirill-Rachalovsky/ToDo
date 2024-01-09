@@ -4,7 +4,7 @@ from typing import AsyncGenerator
 import pytest
 from httpx import AsyncClient
 
-from database import engine, Base
+from todo_app.database import engine, Base
 from todo_app.main import app
 
 
