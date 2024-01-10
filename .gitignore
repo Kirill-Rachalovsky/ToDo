@@ -2,5 +2,6 @@
 venv
 .venv
 .env
+.env_docker
 todo_app/error_log.txt
 

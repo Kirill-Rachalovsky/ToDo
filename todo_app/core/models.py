@@ -35,7 +35,7 @@ class Tasks(Base):
     status = Column(
         ENUM(
             StatusEnum,
-            name="status_enum",
+            name="status__enum",
             create_type=True,
             nullable=False,
             default=StatusEnum.NOT_STARTED

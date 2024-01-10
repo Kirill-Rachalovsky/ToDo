@@ -4,7 +4,7 @@ from sqlalchemy.orm import DeclarativeBase
 
 from todo_app.config import Configuration
 
-config = dotenv_values(".env")
+config = dotenv_values(".env_docker")
 
 if config["TESTING_MODE"].lower() == "true":
     TESTING_MODE = True
