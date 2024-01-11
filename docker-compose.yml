@@ -10,13 +10,25 @@ services:
     env_file:
       - .env_docker
 
-  todo:
+  todo_app:
     build:
       context: .
+    command: uvicorn todo_app.main:web_app --host '0.0.0.0' --port 8000
     env_file:
       - .env_docker
     container_name: todo
     ports:
       - 8000:8000
+    depends_on:
+      - postgres_db
+
+  statistic_app:
+    build:
+      context: .
+    command: uvicorn statistic.main:stat_app --host '0.0.0.0' --port 8080
+    env_file:
+      - .env_docker
+    ports:
+      - 8080:8080
     depends_on:
       - postgres_db
