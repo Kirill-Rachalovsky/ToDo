@@ -21,28 +21,9 @@ api_users = FastAPIUsers[User, int](
 async def create_board(db: AsyncSession, user: User, board: BoardsBase):
     db_board = models.Boards(
         title=board.title,
-        user_id=user.id
+        user_id=user.id,
     )
     db.add(db_board)
-    await db.commit()
-    await db.refresh(db_board)
-    for task in board.tasks:
-
-        if task.status not in StatusEnum:
-            raise HTTPException(
-                status_code=500,
-                detail=f'You should choice task status from {StatusEnum.get_allowed_statuses()}'
-            )
-
-        db_task = models.Tasks(
-            status=task.status,
-            task_text=task.task_text,
-            date_created=datetime.today(),
-            date_update=datetime.today(),
-            board_id=db_board.id
-        )
-        db.add(db_task)
-
     await db.commit()
     await db.refresh(db_board)
     return db_board
@@ -97,15 +78,21 @@ async def delete_board(db: AsyncSession, user: User, board_id: int):
 
     tasks_query = await db.execute(select(models.Tasks).where(models.Tasks.board_id == board_id))
     boards_tasks = tasks_query.scalars().all()
+
+    deleted_tasks_list = []
+
     if len(boards_tasks) != 0:
         for task in boards_tasks:
             result = await db.execute(select(models.Tasks).where(models.Tasks.id == task.id))
             db_task = result.scalar()
+            deleted_tasks_list.append(db_task.id)
             await db.delete(db_task)
         await db.commit()
     await db.refresh(db_board)
     await db.delete(db_board)
     await db.commit()
+
+    return deleted_tasks_list
 
 
 async def create_task(db: AsyncSession, user: User, board_id: int, task: TaskBase):
@@ -151,7 +138,6 @@ async def update_task(db: AsyncSession, user: User,
     await db.commit()
     await db.refresh(db_task)
     return db_task
-
 
 
 async def delete_task(db: AsyncSession, user: User, board_id: int, task_id: int):

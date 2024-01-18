@@ -6,7 +6,7 @@ from todo_app.auth.auth import auth_backend
 from todo_app.auth.manager import get_user_manager
 from todo_app.auth.user_model import User
 from todo_app.core import crud
-from todo_app.core.schemas import BoardsCreate, TasksCreate
+from todo_app.core.schemas import BoardsBase, TaskBase
 from todo_app.database import get_db
 
 api_users = FastAPIUsers[User, int](
@@ -20,9 +20,10 @@ todo_router = APIRouter()
 
 
 @todo_router.post("/boards", status_code=201)
-async def create_board_service(board: BoardsCreate, db: AsyncSession = Depends(get_db),
+async def create_board_service(board: BoardsBase, db: AsyncSession = Depends(get_db),
                                user: User = Depends(current_user)):
-    _board = await crud.create_board(db, user, board=board.parameter)
+    _board = await crud.create_board(db, user, board=board)
+
     return {
         'message': 'Board created successfully',
         'details': _board
@@ -50,12 +51,15 @@ async def update_board_service(board_id: int, new_title: str, db: AsyncSession =
 
 @todo_router.delete("/boards/{board_id}")
 async def delete_board_service(board_id: int, db: AsyncSession = Depends(get_db), user: User = Depends(current_user)):
-    await crud.delete_board(db, user, board_id)
+    deleted_tasks_list = await crud.delete_board(db, user, board_id)
+    for task_id in deleted_tasks_list:
+        await crud.delete_task(db, user, board_id, task_id)
+        # тут отсылка сообщения в кафку на удаление таски
     return {'message': "Board delete successfully"}
 
 
 @todo_router.post("/boards/{board_id}", status_code=201)
-async def create_task_service(board_id: int, task: TasksCreate, db: AsyncSession = Depends(get_db),
+async def create_task_service(board_id: int, task: TaskBase, db: AsyncSession = Depends(get_db),
                               user: User = Depends(current_user)):
     _task = await crud.create_task(db, user, board_id, task)
     return {
@@ -65,7 +69,7 @@ async def create_task_service(board_id: int, task: TasksCreate, db: AsyncSession
 
 
 @todo_router.put("/boards/{board_id}/{task_id}", status_code=201)
-async def update_task_service(board_id: int, task_id: int, task: TasksCreate, db: AsyncSession = Depends(get_db),
+async def update_task_service(board_id: int, task_id: int, task: TaskBase, db: AsyncSession = Depends(get_db),
                               user: User = Depends(current_user)):
     _task = await crud.update_task(db, user, board_id, task_id, task)
     return _task

@@ -1,25 +1,25 @@
-import dotenv
+from contextlib import asynccontextmanager
+
+from dotenv import dotenv_values
 from fastapi import FastAPI, Request, HTTPException
-from starlette.middleware.cors import CORSMiddleware
-from jose import jwt
+from pymongo import MongoClient
 
-stat_app = FastAPI()
+from statistic.kafka_messages.processing import processing_router
+from statistic.router import statistic_router
+from statistic.database import DatabaseManager
 
-origins = [
-    "http://localhost.tiangolo.com",
-    "https://localhost.tiangolo.com",
-    "http://localhost",
-    "http://localhost:8080",
-    "http://localhost:8000",
-]
+config = dotenv_values(".env_mongo")
 
-stat_app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    app.client = DatabaseManager()
+    app.mongo_db = app.client.collection
+    yield
+    app.client.close_db()
+
+
+stat_app = FastAPI(lifespan=lifespan)
 
 
 @stat_app.middleware("http")
@@ -31,14 +31,7 @@ async def auth_check_middleware(request: Request, call_next):
     return response
 
 
-@stat_app.get("/stat")
-async def get_stat():
-    return {"status": "ok"}
-
-
-@stat_app.get("/current_user")
-async def get_current_user_id(request: Request):
-    token = request.cookies.get('fastapiusersauth')
-    claims = jwt.get_unverified_claims(token)
-    user_id = claims['sub']
-    return {'current_user': user_id}
+stat_app.include_router(
+    statistic_router,
+    tags=['statistic']
+)

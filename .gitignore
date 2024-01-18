@@ -3,5 +3,6 @@ venv
 .venv
 .env
 .env_docker
+/.env_mongo
 todo_app/error_log.txt
 

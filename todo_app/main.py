@@ -34,7 +34,7 @@ web_app.include_router(
 
 web_app.include_router(
     api_users.get_register_router(UserRead, UserCreate),
-    prefix="/auth",
+    prefix="/auth/register",
     tags=["auth"],
 )
 
