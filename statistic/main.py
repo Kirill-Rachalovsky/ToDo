@@ -2,11 +2,9 @@ from contextlib import asynccontextmanager
 
 from dotenv import dotenv_values
 from fastapi import FastAPI, Request, HTTPException
-from pymongo import MongoClient
 
-from statistic.kafka_messages.processing import processing_router
-from statistic.router import statistic_router
 from statistic.database import DatabaseManager
+from statistic.router import statistic_router
 
 config = dotenv_values(".env_mongo")
 

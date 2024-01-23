@@ -1,7 +1,7 @@
 from dotenv import dotenv_values
 from pymongo import MongoClient
 
-mongo_config = dotenv_values('.env_mongo')
+config = dotenv_values('.env_docker')
 
 
 class DatabaseManager:
@@ -11,9 +11,9 @@ class DatabaseManager:
         return cls.instance
 
     def __init__(self):
-        self.client = MongoClient(mongo_config['MONGO_URI'])
-        self.db = self.client[mongo_config['MONGO_DB_NAME']]
-        self.collection = self.db[mongo_config['MONGO_COLLECTION_NAME']]
+        self.client = MongoClient(config['MONGO_URI'])
+        self.db = self.client[config['MONGO_DB_NAME']]
+        self.collection = self.db[config['MONGO_COLLECTION_NAME']]
 
     def __enter__(self):
         pass

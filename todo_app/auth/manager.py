@@ -1,3 +1,4 @@
+import json
 from typing import AsyncGenerator
 from typing import Optional
 
@@ -8,6 +9,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from todo_app.auth.user_model import User
 from todo_app.database import SessionLocal, configuration
+from todo_app.kafka_messages.maker import *
+from todo_app.kafka_messages.producer import producer
+
 
 SECRET = configuration.secret
 
@@ -17,6 +21,9 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
     verification_token_secret = SECRET
 
     async def on_after_register(self, user: User, request: Optional[Request] = None):
+        message = json.dumps(create_user_message(user))
+        producer.produce(topic='kafka_messages_topic', key="statistic_update", value=message)
+        producer.flush()
         print(f"User {user.id} has registered.")
 
 

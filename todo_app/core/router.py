@@ -1,3 +1,5 @@
+import json
+
 from fastapi import APIRouter, Depends
 from fastapi_users import FastAPIUsers
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -8,6 +10,9 @@ from todo_app.auth.user_model import User
 from todo_app.core import crud
 from todo_app.core.schemas import BoardsBase, TaskBase
 from todo_app.database import get_db
+from todo_app.kafka_messages.maker import *
+from todo_app.kafka_messages.producer import producer
+
 
 api_users = FastAPIUsers[User, int](
     get_user_manager,
@@ -53,8 +58,9 @@ async def update_board_service(board_id: int, new_title: str, db: AsyncSession =
 async def delete_board_service(board_id: int, db: AsyncSession = Depends(get_db), user: User = Depends(current_user)):
     deleted_tasks_list = await crud.delete_board(db, user, board_id)
     for task_id in deleted_tasks_list:
-        await crud.delete_task(db, user, board_id, task_id)
-        # тут отсылка сообщения в кафку на удаление таски
+        message = json.dumps(delete_task_message(user.id, task_id))
+        producer.produce(topic='kafka_messages_topic', key="statistic_update", value=message)
+        producer.flush()
     return {'message': "Board delete successfully"}
 
 
@@ -62,6 +68,11 @@ async def delete_board_service(board_id: int, db: AsyncSession = Depends(get_db)
 async def create_task_service(board_id: int, task: TaskBase, db: AsyncSession = Depends(get_db),
                               user: User = Depends(current_user)):
     _task = await crud.create_task(db, user, board_id, task)
+
+    message = json.dumps(create_task_message(user.id, _task))
+    producer.produce(topic='kafka_messages_topic', key="statistic_update", value=message)
+    producer.flush()
+
     return {
         'message': "Task Created successfully",
         'details': _task
@@ -72,6 +83,11 @@ async def create_task_service(board_id: int, task: TaskBase, db: AsyncSession = 
 async def update_task_service(board_id: int, task_id: int, task: TaskBase, db: AsyncSession = Depends(get_db),
                               user: User = Depends(current_user)):
     _task = await crud.update_task(db, user, board_id, task_id, task)
+
+    message = json.dumps(update_task_message(user.id, _task))
+    producer.produce(topic='kafka_messages_topic', key="statistic_update", value=message)
+    producer.flush()
+
     return _task
 
 
@@ -79,4 +95,9 @@ async def update_task_service(board_id: int, task_id: int, task: TaskBase, db: A
 async def delete_task_service(board_id: int, task_id: int, db: AsyncSession = Depends(get_db),
                               user: User = Depends(current_user)):
     await crud.delete_task(db, user, board_id, task_id)
+
+    message = json.dumps(delete_task_message(user.id, task_id))
+    producer.produce(topic='kafka_messages_topic', key="statistic_update", value=message)
+    producer.flush()
+
     return {'message': "Task deleted successfully"}

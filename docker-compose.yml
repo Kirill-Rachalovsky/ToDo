@@ -21,6 +21,7 @@ services:
       - 8000:8000
     depends_on:
       - postgres_db
+      - statistic_app
 
   statistic_app:
     build:
