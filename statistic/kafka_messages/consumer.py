@@ -1,7 +1,7 @@
 from confluent_kafka import Consumer
 from dotenv import dotenv_values
 
-env = dotenv_values(".env_docker")
+env = dotenv_values("../../.env")
 
 conf = {'bootstrap.servers': env['BOOTSTRAP_SERVER'],
         'security.protocol': 'SASL_SSL',

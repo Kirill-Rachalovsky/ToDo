@@ -17,7 +17,7 @@ def create_task_message(user_id, task_instance):
         'action': 'create_task',
         'user_id': user_id,
         'task_id': task_instance.id,
-        'task_status': str(task_instance.status),
+        'task_status': str(task_instance.status.value),
         'date_created': str(task_instance.date_created)
     }
 
@@ -25,9 +25,9 @@ def create_task_message(user_id, task_instance):
 def update_task_message(user_id, task_instance):
     return {
         'action': 'update_task',
-        'user_id': str(user_id),
-        'task_id': str(task_instance.id),
-        'task_status': str(task_instance.status),
+        'user_id': user_id,
+        'task_id': task_instance.id,
+        'task_status': str(task_instance.status.value),
         'date_created': str(task_instance.date_created)
     }
 
@@ -35,6 +35,6 @@ def update_task_message(user_id, task_instance):
 def delete_task_message(user_id, task_id):
     return {
         'action': 'delete_task',
-        'user_id': str(user_id),
-        'task_id': str(task_id),
+        'user_id': user_id,
+        'task_id': task_id,
     }
