@@ -1,7 +1,8 @@
 from fastapi_users_db_sqlalchemy import SQLAlchemyBaseUserTable
 from sqlalchemy import String, Boolean, Integer
 from sqlalchemy.orm import Mapped, mapped_column
-from database import Base
+
+from todo_app.database import Base
 
 
 class User(SQLAlchemyBaseUserTable[int], Base):
@@ -24,8 +25,3 @@ class User(SQLAlchemyBaseUserTable[int], Base):
     is_verified: Mapped[bool] = mapped_column(
         Boolean, default=False, nullable=False
     )
-
-
-
-
-

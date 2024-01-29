@@ -4,8 +4,8 @@ from typing import AsyncGenerator
 import pytest
 from httpx import AsyncClient
 
-from database import engine, Base
-from main import app
+from todo_app.database import engine, Base
+from todo_app.main import web_app
 
 
 @pytest.fixture(autouse=True, scope="session")
@@ -32,7 +32,7 @@ def anyio_backend():
 
 @pytest.fixture(scope="session")
 async def async_client() -> AsyncGenerator[AsyncClient, None]:
-    async with AsyncClient(app=app, base_url="http://test") as async_client:
+    async with AsyncClient(app=web_app, base_url="http://test") as async_client:
         yield async_client
 
 

@@ -1,7 +1,6 @@
-from typing import List
-
 from pydantic import BaseModel
-from core.models import StatusEnum
+
+from todo_app.core.models import StatusEnum
 
 
 class TaskBase(BaseModel):
@@ -11,5 +10,3 @@ class TaskBase(BaseModel):
 
 class BoardsBase(BaseModel):
     title: str = 'Enter a board title'
-    tasks: List[TaskBase]
-

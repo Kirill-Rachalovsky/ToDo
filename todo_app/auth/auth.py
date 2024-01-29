@@ -1,6 +1,6 @@
 from fastapi_users.authentication import CookieTransport, JWTStrategy, AuthenticationBackend
-from database import configuration
 
+from todo_app.database import configuration
 
 cookie_transport = CookieTransport(cookie_max_age=3600)
 

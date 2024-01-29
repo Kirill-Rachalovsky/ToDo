@@ -1,5 +1,6 @@
-from auth.user_model import Base
 from sqlalchemy import Integer, String, Column, Boolean
+
+from todo_app.auth.user_model import Base
 
 
 class User(Base):

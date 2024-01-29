@@ -1,7 +1,7 @@
 import pytest
 from httpx import AsyncClient
 
-from core.models import StatusEnum
+from todo_app.core.models import StatusEnum
 
 
 @pytest.fixture()
