@@ -2,3 +2,5 @@
 venv
 .venv
 .env
+todo_app/error_log.txt
+
